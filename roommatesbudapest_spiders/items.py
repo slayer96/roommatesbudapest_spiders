@@ -9,6 +9,7 @@ import scrapy
 
 
 class RoommatesbudapestSpidersItem(scrapy.Item):
+    url = scrapy.Field()
     type = scrapy.Field()
     city = scrapy.Field()
     address = scrapy.Field()

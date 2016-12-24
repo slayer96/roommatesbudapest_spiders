@@ -1,6 +1,7 @@
 import scrapy
 import logging
 from ..items import RoommatesbudapestSpidersItem
+from geopy.geocoders import Nominatim
 
 
 class RoomatesSpider(scrapy.Spider):
@@ -24,7 +25,20 @@ class RoomatesSpider(scrapy.Spider):
             yield scrapy.Request(url, callback=self.parse_room_page)
 
     def parse_room_page(self, response):
+
+        def get_coordinates(address):
+            geo_locator = Nominatim()
+            try:
+                location = geo_locator.geocode(str(address.encode('utf-8')))
+                if address and not location:
+                    logging.info(address.split(',')[0])
+                    location = geo_locator.geocode(address.split(',')[0])
+                return location.latitude, location.longitude
+            except Exception as e:
+                return '', ''
+
         item = RoommatesbudapestSpidersItem()
+        item['url'] = response.url
         item['type'] = response.xpath('//dt[text()="%s"]/following-sibling::dd/text()' % 'Type:').extract_first()
         item['city'] = response.xpath('//dt[text()="%s"]/following-sibling::dd/text()' % 'City:').extract_first()
         item['address'] = response.xpath('//dt[text()="%s"]/following-sibling::dd/text()' % 'Address:').extract_first()
@@ -39,7 +53,6 @@ class RoomatesSpider(scrapy.Spider):
             '//dt[text()="%s"]/following-sibling::dd/text()' % 'Apartment size:').extract_first()
         item['total_number_of_flatmates'] = response.xpath(
             '//dt[text()="%s"]/following-sibling::dd/text()' % 'Total number of flatmates:').extract_first()
-
         item['available_from'] = response.xpath(
             '//dt[text()="%s"]/following-sibling::dd/text()' % 'Available from:').extract_first()
         item['term_of_lease'] = response.xpath(
@@ -60,8 +73,9 @@ class RoomatesSpider(scrapy.Spider):
         item['environment_surroundings'] = [i.extract() for i in response.xpath(
             '//div[@id="%s"]/ul/descendant::*/text()' % 'surrounding-list')]
 
-        item['latitude'] = ''
-        item['longitude'] = ''
+        coordinates = get_coordinates(item['address'])
+        item['latitude'] = coordinates[0]
+        item['longitude'] = coordinates[1]
 
         item['age'] = response.xpath(
             '//ul[@class="list tab-aboutme"]/li/dl/dt[text()="%s"]/following-sibling::dd/text()' % 'Age').extract_first()
