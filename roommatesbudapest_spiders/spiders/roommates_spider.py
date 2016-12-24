@@ -6,7 +6,6 @@ from geopy.geocoders import Nominatim
 
 class RoomatesSpider(scrapy.Spider):
     name = 'roomatesspider'
-    # allowed_domains = ['']
     start_urls = (
         'http://roommatesbudapest.com/site/roommates',
     )
